@@ -45,8 +45,8 @@ do
   avg_temp=$(( current_max_temp > avg_temp ? current_max_temp : ((AVG_TESTS-1)*avg_temp + current_max_temp) / AVG_TESTS ))
   ${DEBUG} && logger -t $LOGGER_NAME "event: read_max; temp: ${current_max_temp}"
 
-  temp_min=60000
-  temp_max=80000
+  temp_min=70000
+  temp_max=90000
   fan_min=80
   fan_max=255
   new_fan_speed=$(( $fan_min + ($fan_max - $fan_min)*($avg_temp - $temp_min)/($temp_max - $temp_min) ))
