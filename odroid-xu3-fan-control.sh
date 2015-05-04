@@ -21,7 +21,7 @@ FAN_MODE_FILE="/sys/devices/odroid_fan.14/fan_mode"
 FAN_SPEED_FILE="/sys/devices/odroid_fan.14/pwm_duty"
 TEST_EVERY=1 #seconds
 AVG_TESTS=20 #exp. smoothing with factor AVG_TESTS^-1
-new_fan_speed_default=80
+OFF_TIMEOUT=600 #seconds fan stays at min, even if not needed
 LOGGER_NAME=odroid-xu3-fan-control
 
 #make sure after quiting script fan goes to auto control
@@ -37,6 +37,7 @@ echo "For more logs see:"
 echo "sudo tail -f /var/log/syslog"
 
 avg_temp=0
+off_tests=$OFF_TIMEOUT
 while [ true ];
 do
   echo 0 > ${FAN_MODE_FILE} #to be sure we can manage fan
@@ -49,8 +50,10 @@ do
   temp_max=90000
   fan_min=80
   fan_max=255
-  new_fan_speed=$(( $fan_min + ($fan_max - $fan_min)*($avg_temp - $temp_min)/($temp_max - $temp_min) ))
-  new_fan_speed=$(( $new_fan_speed < $fan_min ? 1 : $new_fan_speed > $fan_max ? $fan_max : $new_fan_speed ))
+  new_fan_speed=$(( fan_min + (fan_max - fan_min)*(avg_temp - temp_min)/(temp_max - temp_min) ))
+  new_fan_speed=$(( new_fan_speed < fan_min ? fan_min : new_fan_speed > fan_max ? fan_max : new_fan_speed ))
+  off_tests=$(( avg_temp < temp_min ? off_tests+1 : 0 ))
+  new_fan_speed=$(( off_tests*TEST_EVERY >= OFF_TIMEOUT ? 1 : new_fan_speed ))
   echo "temp: $current_max_temp; smooth: $avg_temp; fan: $new_fan_speed"
   ${DEBUG} && logger -t $LOGGER_NAME "event: adjust; speed: ${new_fan_speed}"
   echo ${new_fan_speed} > ${FAN_SPEED_FILE}
