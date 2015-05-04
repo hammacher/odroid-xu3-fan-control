@@ -42,26 +42,12 @@ do
   current_max_temp=`cat ${TEMPERATURE_FILE} | cut -d: -f2 | sort -nr | head -1`
   ${DEBUG} && logger -t $LOGGER_NAME "event: read_max; temp: ${current_max_temp}"
 
-  new_fan_speed=0
-  if (( ${current_max_temp} >= 75000 )); then
-    new_fan_speed=255
-  elif (( ${current_max_temp} >= 70000 )); then
-    new_fan_speed=200
-  elif (( ${current_max_temp} >= 68000 )); then
-    new_fan_speed=130
-  elif (( ${current_max_temp} >= 66000 )); then
-    new_fan_speed=70 
-  elif (( ${current_max_temp} >= 63000 )); then
-    new_fan_speed=65 
-  elif (( ${current_max_temp} >= 60000 )); then
-    new_fan_speed=60
-  elif (( ${current_max_temp} >= 58000 )); then
-    new_fan_speed=50
-  elif (( ${current_max_temp} >= 55000 )); then
-    new_fan_speed=30
-  else
-    new_fan_speed=2
-  fi
+  temp_min=60000
+  temp_max=80000
+  fan_min=80
+  fan_max=255
+  new_fan_speed=$(( $fan_min + ($fan_max - $fan_min)*($current_max_temp - $temp_min)/($temp_max - $temp_min) ))
+  new_fan_speed=$(( $new_fan_speed < $fan_min ? 1 : $new_fan_speed > $fan_max ? $fan_max : $new_fan_speed ))
   ${DEBUG} && logger -t $LOGGER_NAME "event: adjust; speed: ${new_fan_speed}"
   echo ${new_fan_speed} > ${FAN_SPEED_FILE}
 
