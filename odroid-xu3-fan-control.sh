@@ -20,7 +20,8 @@ TEMPERATURE_FILE="/sys/devices/10060000.tmu/temp"
 FAN_MODE_FILE="/sys/devices/odroid_fan.14/fan_mode"
 FAN_SPEED_FILE="/sys/devices/odroid_fan.14/pwm_duty"
 TEST_EVERY=1 #seconds
-AVG_TESTS=20 #exp. smoothing with factor AVG_TESTS^-1
+AVG_TESTS_UP=5 #exp. smoothing factor for increasing temp
+AVG_TESTS_DOWN=20 #exp. smoothing factor for decreasing temp
 OFF_TIMEOUT=600 #seconds fan stays at min, even if not needed
 LOGGER_NAME=odroid-xu3-fan-control
 
@@ -43,7 +44,8 @@ do
   echo 0 > ${FAN_MODE_FILE} #to be sure we can manage fan
 
   current_max_temp=`cat ${TEMPERATURE_FILE} | cut -d: -f2 | sort -nr | head -1`
-  avg_temp=$(( current_max_temp > avg_temp ? current_max_temp : ((AVG_TESTS-1)*avg_temp + current_max_temp) / AVG_TESTS ))
+  avg_factor=$(( current_max_temp > avg_temp ? AVG_TESTS_UP : AVG_TESTS_DOWN ))
+  avg_temp=$(( ((avg_factor-1)*avg_temp + current_max_temp) / avg_factor ))
   ${DEBUG} && logger -t $LOGGER_NAME "event: read_max; temp: ${current_max_temp}"
 
   temp_min=70000
